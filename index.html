@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF- আইনশৃঙ্খলা">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>STL Model Viewer</title>
+    <style>
+        /* CSS (Cascading Style Sheets) */
+        :root {
+            --primary-color: #2c3e50; /* Dark Blue */
+            --secondary-color: #3498db; /* Bright Blue */
+            --light-color: #ecf0f1; /* Light Gray */
+            --text-color: #34495e; /* Dark Gray Text */
+            --accent-color: #e74c3c; /* Reddish Accent */
+            --border-radius: 8px;
+            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            --font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            background-color: var(--light-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align content to the top */
+            min-height: 100vh;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+        }
+
+        header {
+            background-color: var(--primary-color);
+            color: var(--light-color);
+            padding: 1em 0;
+            text-align: center;
+            width: 100%;
+            box-shadow: var(--shadow);
+            position: sticky; /* Make header sticky */
+            top: 0;
+            z-index: 1000;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.8em;
+            letter-spacing: 1px;
+        }
+
+        main {
+            width: 100%;
+            max-width: 900px; /* Max width for larger screens */
+            padding: 20px;
+            box-sizing: border-box; /* Include padding in width calculation */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #viewer-container {
+            width: 100%;
+            aspect-ratio: 4 / 3; /* Maintain aspect ratio, good for 3D views */
+            max-height: 60vh; /* Limit height on taller screens */
+            background-color: #ffffff;
+            border: 1px solid #bdc3c7; /* Lighter border */
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: var(--shadow);
+            overflow: hidden; /* Ensure nothing spills out */
+        }
+
+        #viewer-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: #7f8c8d; /* Muted text color */
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #viewer-placeholder svg {
+            width: 60px;
+            height: 60px;
+            margin-bottom: 15px;
+            fill: var(--secondary-color);
+        }
+
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            width: 100%;
+            max-width: 400px; /* Control width of upload section */
+            box-sizing: border-box;
+        }
+
+        .upload-button-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            background-color: var(--secondary-color);
+            color: var(--light-color);
+            padding: 12px 25px;
+            border-radius: var(--border-radius);
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            text-align: center;
+        }
+
+        .upload-button-wrapper:hover {
+            background-color: #2980b9; /* Darker blue on hover */
+            transform: translateY(-2px);
+        }
+
+        .upload-button-wrapper input[type="file"] {
+            font-size: 100px; /* Make it large to cover the button */
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0; /* Make it invisible */
+            cursor: pointer;
+            height: 100%;
+            width: 100%;
+        }
+
+        #file-name {
+            margin-top: 15px;
+            font-style: italic;
+            color: var(--primary-color);
+            word-break: break-all; /* Prevent long file names from breaking layout */
+            max-width: 100%;
+            text-align: center;
+        }
+
+        .instructions {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 20px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 5px solid var(--light-color);
+            border-top: 5px solid var(--secondary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            display: none; /* Hidden by default */
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Mobile specific adjustments */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.5em;
+            }
+            .upload-button-wrapper {
+                padding: 10px 20px;
+                font-size: 1em;
+            }
+            main {
+                padding: 15px;
+            }
+            .upload-section {
+                padding: 20px;
+            }
+        }
+
+        /* Creative Touch: Subtle gradient animation for background (optional) */
+        body {
+            /* background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab); */
+            /* background-size: 400% 400%; */
+            /* animation: gradientBG 15s ease infinite; */
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1>✨ STL Model Viewer ✨</h1>
+    </header>
+
+    <main>
+        <div id="viewer-container">
+            <div id="viewer-placeholder">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+                    <path d="M12.75 15.25c0 .41-.34.75-.75.75s-.75-.34-.75-.75V10c0-.41.34-.75.75-.75s.75.34.75.75v5.25zM11.25 7.5c0-.41.34-.75.75-.75s.75.34.75.75V6c0-.41-.34-.75-.75-.75s-.75.34-.75.75v1.5zm2.25 3.75c.41 0 .75-.34.75-.75V8.25c0-.41-.34-.75-.75-.75s-.75.34-.75.75v2.25c0 .41.34.75.75.75zm-3-3.75c.41 0 .75-.34.75-.75V6c0-.41-.34-.75-.75-.75s-.75.34-.75.75v1.5c0 .41.34.75.75.75zm1.5 9.75c-.41 0-.75.34-.75.75v1.5c0 .41.34.75.75.75s.75-.34.75-.75V18c0-.41-.34-.75-.75-.75zm3-1.5c0 .41-.34.75-.75.75s-.75-.34-.75-.75V14.25c0-.41.34-.75.75-.75s.75.34.75.75v2.25z"/>
+                    <path fill="none" d="M0 0h24v24H0z"/>
+                    <path d="M21.99 10.76c0-1.08-.39-2.07-.98-2.85l-1.72-2.29c-.23-.3-.55-.51-.9-.63C17.79 4.87 17 5 16.37 5.37l-2.03 1.22c-.12.07-.25.11-.39.11-.34 0-.65-.19-.8-.49l-.82-1.64c-.27-.54-.83-.86-1.42-.86s-1.15.32-1.42.86l-.82 1.64c-.15.3-.46.49-.8.49-.13 0-.26-.04-.39-.11L5.63 5.37C5 4.99 4.21 4.87 3.62 5c-.35.12-.67.32-.9.63l-1.72 2.29c-.59.78-.98 1.77-.98 2.85V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2v-8.24zM12 20c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5l2.03-3.04c.14-.21.39-.34.67-.34s.52.13.67.34l1.63 2.44 2.97-3.96c.15-.2.39-.32.66-.32s.51.12.66.32l3.51 4.68H6.5z"/>
+                </svg>
+                <p>Your 3D model will appear here.</p>
+                <p>Click the button below to upload an .STL file.</p>
+            </div>
+            <div class="loader" id="loader"></div>
+        </div>
+
+        <section class="upload-section">
+            <div class="upload-button-wrapper">
+                <span>🚀 Upload STL File</span>
+                <input type="file" id="file-input" accept=".stl">
+            </div>
+            <p id="file-name">No file selected.</p>
+            <p class="instructions">
+                Once uploaded, you can: <br>
+                <b>Drag</b> to rotate. <br>
+                <b>Scroll</b> (or pinch on mobile) to zoom. <br>
+                <b>Right-click/Two-finger drag</b> to pan.
+            </p>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/STLLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <script>
+        // JavaScript
+        let scene, camera, renderer, mesh, controls;
+        const viewerContainer = document.getElementById('viewer-container');
+        const fileInput = document.getElementById('file-input');
+        const fileNameDisplay = document.getElementById('file-name');
+        const loaderElement = document.getElementById('loader');
+        const placeholder = document.getElementById('viewer-placeholder');
+
+        function init() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xeeeeee); // Light gray background for the viewer
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 1000);
+            camera.position.set(50, 50, 50); // Default camera position
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio); // For sharper rendering on high DPI screens
+            viewerContainer.appendChild(renderer.domElement);
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // Soft white light
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(100, 100, 100);
+            directionalLight.castShadow = true; // Optional: if you want shadows
+            scene.add(directionalLight);
+            const pointLight = new THREE.PointLight(0xffffff, 0.5);
+            pointLight.position.set(-100, -50, -50);
+            scene.add(pointLight);
+
+
+            // Controls
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = true; // Better for panning
+            controls.minDistance = 10;
+            controls.maxDistance = 500;
+            controls.target.set(0,0,0); // Ensure controls focus on origin if no model
+            controls.update();
+
+
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Initial render
+            animate();
+        }
+
+        function onWindowResize() {
+            if (camera && renderer && viewerContainer) {
+                camera.aspect = viewerContainer.clientWidth / viewerContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
+            }
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (controls) controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+            if (renderer && scene && camera) renderer.render(scene, camera);
+        }
+
+        function loadSTL(file) {
+            if (!file) return;
+
+            fileNameDisplay.textContent = `Selected: ${file.name}`;
+            loaderElement.style.display = 'block'; // Show loader
+            placeholder.style.display = 'none'; // Hide placeholder
+
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const contents = event.target.result;
+                const loader = new THREE.STLLoader();
+                const geometry = loader.parse(contents);
+
+                if (!geometry.attributes.normal) { // Ensure normals exist for proper lighting
+                    geometry.computeVertexNormals();
+                }
+
+                // Remove previous model if exists
+                if (mesh) {
+                    scene.remove(mesh);
+                    mesh.geometry.dispose();
+                    mesh.material.dispose();
+                }
+
+                // Create a visually appealing material
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x007bff, // A nice blue
+                    metalness: 0.3,
+                    roughness: 0.6,
+                    flatShading: false // Smooth shading
+                });
+
+                mesh = new THREE.Mesh(geometry, material);
+
+                // Center and scale the model
+                const boundingBox = new THREE.Box3().setFromObject(mesh);
+                const center = boundingBox.getCenter(new THREE.Vector3());
+                const size = boundingBox.getSize(new THREE.Vector3());
+
+                // Offset the model to be centered at the origin
+                mesh.position.sub(center);
+
+                // Scale the model to fit well in the view
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 100 / maxDim; // Adjust 100 to desired initial visible size
+                mesh.scale.set(scale, scale, scale);
+
+                scene.add(mesh);
+
+                // Update controls target to the center of the new model
+                controls.target.copy(mesh.position); // Though centered, this is good practice
+                camera.lookAt(mesh.position);
+
+                // Adjust camera position to better frame the model
+                const distance = maxDim * scale * 1.5; // Adjust multiplier for initial zoom
+                const direction = new THREE.Vector3(1, 1, 1).normalize(); // Diagonal view
+                camera.position.copy(direction).multiplyScalar(distance);
+                camera.position.add(mesh.position); // Ensure camera is relative to model's new position (origin)
+
+                controls.update();
+                loaderElement.style.display = 'none'; // Hide loader
+            };
+
+            reader.onerror = function (event) {
+                console.error("File could not be read! Code " + event.target.error.code);
+                fileNameDisplay.textContent = 'Error loading file.';
+                loaderElement.style.display = 'none';
+                placeholder.style.display = 'flex';
+            };
+
+            // Read as ArrayBuffer for STLLoader
+            reader.readAsArrayBuffer(file);
+        }
+
+        fileInput.addEventListener('change', function (event) {
+            const file = event.target.files[0];
+            if (file) {
+                loadSTL(file);
+            } else {
+                fileNameDisplay.textContent = 'No file selected.';
+                if (!mesh) placeholder.style.display = 'flex'; // Show placeholder if no model was ever loaded
+            }
+        });
+
+        // Initialize the viewer
+        init();
+    </script>
+</body>
+</html>
