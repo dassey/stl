@@ -2,21 +2,26 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Advanced STL Model Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Mobile STL Viewer</title>
     <style>
         :root {
-            --primary-color: #2c3e50; /* Dark Blue */
-            --secondary-color: #3498db; /* Bright Blue */
-            --light-color: #ecf0f1; /* Light Gray */
-            --text-color: #34495e; /* Dark Gray Text */
-            --accent-color: #e74c3c; /* Reddish Accent */
-            --success-color: #2ecc71; /* Green */
-            --warning-color: #f39c12; /* Yellow */
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --light-color: #ecf0f1;
+            --text-color: #34495e;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
             --error-color: var(--accent-color);
             --border-radius: 8px;
-            --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Softer shadow for mobile */
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"; /* System fonts */
+        }
+
+        html, body {
+            height: 100%; /* Ensure body takes full height for flex */
+            overscroll-behavior-y: contain; /* Prevent pull-to-refresh if not needed */
         }
 
         body {
@@ -27,68 +32,66 @@
             color: var(--text-color);
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            min-height: 100vh; /* Fallback for older browsers */
+            min-height: 100svh; /* Smallest viewport height, accounts for browser UI */
             overflow-x: hidden;
         }
 
         header {
             background-color: var(--primary-color);
             color: var(--light-color);
-            padding: 1em 0;
+            padding: 0.8em 0; /* Slightly reduced padding */
             text-align: center;
             width: 100%;
             box-shadow: var(--shadow);
             position: sticky;
             top: 0;
             z-index: 1000;
+            flex-shrink: 0; /* Prevent header from shrinking */
         }
 
         header h1 {
             margin: 0;
-            font-size: 1.8em;
-            letter-spacing: 1px;
+            font-size: 1.5em; /* Adjusted for mobile */
+            letter-spacing: 0.5px;
         }
 
         .main-container {
             display: flex;
+            flex-direction: column; /* Default to column for mobile-first */
             flex-grow: 1;
             width: 100%;
-            padding: 20px;
+            padding: 10px; /* Reduced padding for mobile */
             box-sizing: border-box;
-            gap: 20px; /* Space between viewer and controls */
-        }
-
-        @media (max-width: 900px) {
-            .main-container {
-                flex-direction: column;
-            }
+            gap: 15px;
+            overflow: hidden; /* Prevent content from causing scroll */
         }
 
         #viewer-area {
-            flex-grow: 1;
-            display: flex;
+            flex-grow: 1; /* Takes up available vertical space */
+            display: flex; /* To make viewer-container grow */
             flex-direction: column;
-            min-width: 0; /* Fix for flexbox overflow */
+            min-width: 0;
+            min-height: 250px; /* Ensure it has some minimum space */
+            background-color: #ccc; /* Debug bg color */
         }
 
         #viewer-container {
             width: 100%;
-            aspect-ratio: 16 / 9; /* Common aspect ratio */
-            max-height: 70vh; /* Limit height */
+            flex-grow: 1; /* Key for filling viewer-area */
             background-color: #ffffff;
             border: 1px solid #bdc3c7;
             border-radius: var(--border-radius);
             position: relative;
             box-shadow: var(--shadow);
             overflow: hidden;
-            transition: box-shadow 0.3s ease; /* For drag-over effect */
+            transition: box-shadow 0.3s ease;
         }
 
         #viewer-container.drag-over {
-            box-shadow: 0 0 0 4px var(--secondary-color), var(--shadow);
+            box-shadow: 0 0 0 3px var(--secondary-color), var(--shadow);
             border-color: var(--secondary-color);
         }
-
 
         #viewer-placeholder {
             display: flex;
@@ -98,41 +101,55 @@
             height: 100%;
             color: #7f8c8d;
             text-align: center;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
-            pointer-events: none; /* Allow drop events through */
+            pointer-events: none;
         }
 
         #viewer-placeholder svg {
-            width: 80px;
-            height: 80px;
-            margin-bottom: 15px;
+            width: 60px; /* Adjusted for mobile */
+            height: 60px;
+            margin-bottom: 10px;
             fill: var(--secondary-color);
+        }
+        #viewer-placeholder p {
+            font-size: 0.9em;
         }
 
         .controls-panel {
-            width: 300px; /* Fixed width for controls panel */
             background-color: #ffffff;
-            padding: 20px;
+            padding: 15px;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            overflow-y: auto; /* Scroll if content overflows */
-            max-height: calc(70vh + 40px); /* Match viewer height roughly */
+            gap: 12px;
+            overflow-y: auto;
+            flex-shrink: 0; /* Prevent panel from shrinking excessively */
+            max-height: 45vh; /* Limit height of controls on mobile if too many */
         }
-
-        @media (max-width: 900px) {
+        
+        /* Desktop overrides */
+        @media (min-width: 769px) {
+            .main-container {
+                flex-direction: row;
+                padding: 20px;
+                gap: 20px;
+            }
             .controls-panel {
-                width: 100%;
-                max-height: none; /* Allow full height on mobile */
+                width: 300px;
+                flex-shrink: 0; /* Prevent shrinking on desktop */
+                max-height: calc(100vh - 100px); /* Example max height */
+            }
+             #viewer-area {
+                min-height: 0; /* Reset min-height from mobile */
             }
         }
 
+
         .control-group {
             border-bottom: 1px solid var(--light-color);
-            padding-bottom: 15px;
+            padding-bottom: 12px;
         }
         .control-group:last-child {
             border-bottom: none;
@@ -141,42 +158,34 @@
 
         .control-group h3 {
             margin-top: 0;
-            margin-bottom: 10px;
-            font-size: 1.1em;
+            margin-bottom: 8px;
+            font-size: 1.0em;
             color: var(--primary-color);
         }
 
         .button, .upload-button-wrapper {
             background-color: var(--secondary-color);
             color: var(--light-color);
-            padding: 10px 15px;
+            padding: 12px 15px; /* Good tap target size */
             border: none;
             border-radius: var(--border-radius);
-            font-size: 1em;
+            font-size: 0.95em;
             cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.2s ease;
             text-align: center;
             width: 100%;
             box-sizing: border-box;
-            display: inline-block; /* For upload wrapper */
+            display: inline-block;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on iOS */
         }
 
-        .button:hover, .upload-button-wrapper:hover {
+        .button:active, .upload-button-wrapper:active { /* :active for mobile tap feedback */
             background-color: #2980b9;
-            transform: translateY(-1px);
         }
-        .button.secondary {
-            background-color: #7f8c8d;
-        }
-        .button.secondary:hover {
-            background-color: #6c7a7d;
-        }
-        .button.danger {
-            background-color: var(--accent-color);
-        }
-        .button.danger:hover {
-            background-color: #c0392b;
-        }
+        .button.secondary { background-color: #7f8c8d; }
+        .button.secondary:active { background-color: #6c7a7d; }
+        .button.danger { background-color: var(--accent-color); }
+        .button.danger:active { background-color: #c0392b; }
 
 
         .upload-button-wrapper {
@@ -196,30 +205,30 @@
         }
 
         #file-name, #model-info {
-            margin-top: 8px;
-            font-size: 0.9em;
+            margin-top: 6px;
+            font-size: 0.85em;
             color: var(--text-color);
             word-break: break-all;
             text-align: left;
         }
-        #model-info p { margin: 4px 0; }
+        #model-info p { margin: 3px 0; }
 
         .instructions {
-            font-size: 0.85em;
+            font-size: 0.8em;
             color: #7f8c8d;
-            line-height: 1.5;
+            line-height: 1.4;
             background-color: #f9f9f9;
-            padding: 10px;
+            padding: 8px;
             border-radius: calc(var(--border-radius) / 2);
             border: 1px solid #e0e0e0;
         }
 
         .loader {
-            border: 5px solid var(--light-color);
-            border-top: 5px solid var(--secondary-color);
+            border: 4px solid var(--light-color); /* Thinner for mobile */
+            border-top: 4px solid var(--secondary-color);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 40px; /* Smaller for mobile */
+            height: 40px;
             animation: spin 1s linear infinite;
             position: absolute;
             top: 50%;
@@ -235,10 +244,10 @@
         }
 
         .status-message {
-            padding: 10px;
-            margin-top: 10px;
+            padding: 8px 10px;
+            margin-top: 8px;
             border-radius: var(--border-radius);
-            font-size: 0.9em;
+            font-size: 0.85em;
             display: none;
         }
         .status-message.success { background-color: var(--success-color); color: white; }
@@ -247,43 +256,34 @@
 
         .control-item label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
             font-size: 0.9em;
         }
-        .control-item input[type="color"], .control-item input[type="checkbox"] {
-            margin-right: 5px;
+        .control-item input[type="checkbox"] { /* Style checkboxes for better touch */
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
             vertical-align: middle;
         }
         .control-item input[type="color"] {
             width: 100%;
-            height: 30px;
+            height: 35px; /* Taller for touch */
             border: 1px solid #bdc3c7;
             border-radius: 4px;
             padding: 0;
             box-sizing: border-box;
         }
-
-
-        /* Mobile specific adjustments */
-        @media (max-width: 600px) {
-            header h1 { font-size: 1.5em; }
-            .button, .upload-button-wrapper { padding: 10px 15px; font-size: 0.95em; }
-            .main-container { padding: 10px; }
-            .controls-panel { padding: 15px; }
-            #viewer-placeholder svg { width: 60px; height: 60px; }
-        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Advanced STL Model Viewer</h1>
+        <h1>STL Viewer</h1>
     </header>
 
     <div class="main-container">
         <div id="viewer-area">
             <div id="viewer-container">
                 <div id="viewer-placeholder">
-                    <!-- Simplified 3D Cube Icon -->
                     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                         <g stroke="currentColor" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M25 35 L25 75 L65 95 L65 55 Z" fill="rgba(0,0,0,0.1)"/>
@@ -296,7 +296,7 @@
                             <line x1="105" y1="35" x2="65" y2="55"/>
                         </g>
                     </svg>
-                    <p>Drag & Drop an .STL file here or use the upload button.</p>
+                    <p>Tap to upload or drag & drop an .STL file.</p>
                 </div>
                 <div class="loader" id="loader"></div>
             </div>
@@ -305,29 +305,29 @@
 
         <aside class="controls-panel">
             <div class="control-group">
-                <h3>File Operations</h3>
+                <h3>File</h3>
                 <div class="upload-button-wrapper">
-                    <span>📤 Upload STL File</span>
+                    <span>📤 Upload STL</span>
                     <input type="file" id="file-input" accept=".stl">
                 </div>
                 <p id="file-name">No file selected.</p>
-                <button id="clear-model-btn" class="button secondary" style="margin-top:10px;">🗑️ Clear Model</button>
+                <button id="clear-model-btn" class="button secondary" style="margin-top:10px;">🗑️ Clear</button>
             </div>
 
             <div class="control-group">
-                <h3>View Controls</h3>
+                <h3>View</h3>
                 <button id="reset-view-btn" class="button">🔄 Reset View</button>
                  <div class="control-item" style="margin-top:10px;">
                     <input type="checkbox" id="toggle-wireframe-cb">
-                    <label for="toggle-wireframe-cb">Show Wireframe</label>
+                    <label for="toggle-wireframe-cb">Wireframe</label>
                 </div>
                 <div class="control-item">
                     <input type="checkbox" id="toggle-grid-cb">
-                    <label for="toggle-grid-cb">Show Grid</label>
+                    <label for="toggle-grid-cb">Grid</label>
                 </div>
                 <div class="control-item">
                     <input type="checkbox" id="toggle-axes-cb">
-                    <label for="toggle-axes-cb">Show Axes</label>
+                    <label for="toggle-axes-cb">Axes</label>
                 </div>
             </div>
 
@@ -338,29 +338,29 @@
                     <input type="color" id="model-color-picker" value="#007bff">
                 </div>
                 <div class="control-item">
-                    <label for="bg-color-picker">Background Color:</label>
+                    <label for="bg-color-picker">Background:</label>
                     <input type="color" id="bg-color-picker" value="#eeeeee">
                 </div>
             </div>
 
             <div class="control-group">
-                <h3>Model Information</h3>
+                <h3>Info</h3>
                 <div id="model-info">
                     <p>Vertices: N/A</p>
                     <p>Triangles: N/A</p>
                 </div>
             </div>
-
+            
             <div class="control-group">
                 <h3>Export</h3>
-                <button id="screenshot-btn" class="button">📸 Take Screenshot</button>
+                <button id="screenshot-btn" class="button">📸 Screenshot</button>
             </div>
 
-            <div class="control-group instructions">
+            <div class="control-group instructions" style="display: none;" id="interaction-instructions"> <!-- Initially hidden for less clutter on mobile -->
                 <h4>Interaction:</h4>
-                <b>Drag (Left-click):</b> Rotate <br>
-                <b>Scroll/Pinch:</b> Zoom <br>
-                <b>Drag (Right-click/Two-finger):</b> Pan
+                <b>Drag:</b> Rotate <br>
+                <b>Pinch:</b> Zoom <br>
+                <b>Two-finger Drag:</b> Pan
             </div>
         </aside>
     </main>
@@ -370,6 +370,8 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
+        console.log("STL Viewer Script Loaded");
+
         // DOM Elements
         const viewerContainer = document.getElementById('viewer-container');
         const fileInput = document.getElementById('file-input');
@@ -386,6 +388,8 @@
         const bgColorPicker = document.getElementById('bg-color-picker');
         const modelInfoDisplay = document.getElementById('model-info');
         const screenshotBtn = document.getElementById('screenshot-btn');
+        const interactionInstructions = document.getElementById('interaction-instructions');
+
 
         // Three.js variables
         let scene, camera, renderer, mesh, controls, gridHelper, axesHelper;
@@ -395,176 +399,255 @@
         const DEFAULT_BG_COLOR = 0xeeeeee;
 
         function initThree() {
+            console.log("initThree: Starting initialization");
             // Scene
             scene = new THREE.Scene();
             scene.background = new THREE.Color(DEFAULT_BG_COLOR);
+            console.log("initThree: Scene created, background color set to", DEFAULT_BG_COLOR.toString(16));
 
             // Camera
-            camera = new THREE.PerspectiveCamera(75, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 2000);
+            camera = new THREE.PerspectiveCamera(75, viewerContainer.clientWidth / viewerContainer.clientHeight, 0.1, 3000); // Increased far plane
             camera.position.set(50, 50, 50);
+            console.log("initThree: Camera created. Aspect:", viewerContainer.clientWidth / viewerContainer.clientHeight, "Position:", camera.position);
+
 
             // Renderer
-            renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); // preserveDrawingBuffer for screenshots
-            renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            viewerContainer.appendChild(renderer.domElement);
+            try {
+                renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+                renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Cap pixelRatio for performance
+                viewerContainer.appendChild(renderer.domElement);
+                console.log("initThree: Renderer created and appended. Size:", viewerContainer.clientWidth, "x", viewerContainer.clientHeight, "PixelRatio:", renderer.getPixelRatio());
+            } catch (e) {
+                console.error("initThree: Error creating WebGLRenderer:", e);
+                displayStatus("Error initializing 3D view. WebGL might not be supported or is disabled.", "error");
+                // WebGL detection should have caught this, but as a fallback
+                if (placeholder) placeholder.innerHTML = `<p style="color: var(--error-color);">WebGL is required but failed to initialize.</p>`;
+                return false; // Signal failure
+            }
+            
 
-            // Lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            // Lights (Simplified for mobile, but still good)
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8); // Slightly brighter ambient
             scene.add(ambientLight);
-            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.9);
-            directionalLight.position.set(100, 100, 100).normalize();
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Stronger directional
+            directionalLight.position.set(50, 100, 75).normalize();
             scene.add(directionalLight);
-            const pointLight = new THREE.PointLight(0xffffff, 0.6);
-            pointLight.position.set(-100, -50, -100);
-            scene.add(pointLight);
+            console.log("initThree: Lights added.");
+
 
             // Controls
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
+            controls.dampingFactor = 0.05; // Smoothness of damping
             controls.screenSpacePanning = true;
-            controls.minDistance = 5;
-            controls.maxDistance = 1000;
+            controls.minDistance = 1; // Allow closer zoom
+            controls.maxDistance = 2000; // Match far plane somewhat
             controls.target.set(0,0,0);
             controls.update();
+            console.log("initThree: OrbitControls created.");
+
 
             // Helpers (initially hidden)
-            gridHelper = new THREE.GridHelper(200, 20);
+            gridHelper = new THREE.GridHelper(200, 20, 0xcccccc, 0xcccccc);
+            gridHelper.material.opacity = 0.3;
+            gridHelper.material.transparent = true;
             gridHelper.visible = false;
             scene.add(gridHelper);
 
             axesHelper = new THREE.AxesHelper(50);
+            axesHelper.material.depthTest = false; // Render on top
+            axesHelper.renderOrder = 1; // Render on top
             axesHelper.visible = false;
             scene.add(axesHelper);
+            console.log("initThree: Helpers added.");
+
 
             window.addEventListener('resize', onWindowResize, false);
             animate();
+            console.log("initThree: Initialization complete. Animation loop started.");
+            return true; // Signal success
         }
 
         function onWindowResize() {
-            if (!camera || !renderer || !viewerContainer) return;
+            if (!camera || !renderer || !viewerContainer) {
+                console.warn("onWindowResize: Called but essential components missing.");
+                return;
+            }
+            console.log("onWindowResize: Resizing viewer. Old size:", camera.aspect * viewerContainer.clientHeight, "x", viewerContainer.clientHeight);
             camera.aspect = viewerContainer.clientWidth / viewerContainer.clientHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(viewerContainer.clientWidth, viewerContainer.clientHeight);
+            console.log("onWindowResize: New size:", viewerContainer.clientWidth, "x", viewerContainer.clientHeight, "New aspect:", camera.aspect);
         }
 
-        function animate() {
+        let lastFrameTime = 0;
+        function animate(time) {
             requestAnimationFrame(animate);
+            const delta = time - lastFrameTime;
+            lastFrameTime = time;
+
             if (controls) controls.update();
             if (renderer && scene && camera) renderer.render(scene, camera);
+            // console.log(`animate: Frame rendered. Delta: ${delta ? delta.toFixed(2) : 'N/A'}ms`); // Too spammy for regular use
         }
 
         function displayStatus(message, type = 'info') {
+            console.log(`displayStatus: [${type}] ${message}`);
+            if (!statusMessageElement) { console.error("displayStatus: statusMessageElement not found!"); return; }
             statusMessageElement.textContent = message;
-            statusMessageElement.className = `status-message ${type}`; // success, error, warning
+            statusMessageElement.className = `status-message ${type}`;
             statusMessageElement.style.display = 'block';
             setTimeout(() => {
                 statusMessageElement.style.display = 'none';
-            }, 5000);
+            }, type === 'error' ? 8000 : 5000); // Longer display for errors
         }
 
         function frameObject(object) {
-            if (!object) return;
+            if (!object) {
+                console.error("frameObject: Called with null object.");
+                return;
+            }
+            console.log("frameObject: Starting for object:", object.name || object.uuid);
 
             const boundingBox = new THREE.Box3().setFromObject(object);
-            const center = boundingBox.getCenter(new THREE.Vector3());
-            const size = boundingBox.getSize(new THREE.Vector3());
-
-            // Offset the model to be centered at the origin
-            object.position.sub(center);
-
-            // Scale the model
-            const maxDim = Math.max(size.x, size.y, size.z);
-            if (maxDim > 0) { // Avoid division by zero for empty/flat models
-                const scaleFactor = 100 / maxDim; // Target size for largest dimension
-                object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            if (boundingBox.isEmpty()) {
+                console.warn("frameObject: Bounding box is empty. Object might have no geometry or be invisible.");
+                // Position camera to a default view if object is problematic
+                camera.position.set(50, 50, 50);
+                controls.target.set(0, 0, 0);
+                camera.lookAt(0,0,0);
+                controls.update();
+                displayStatus("Warning: Model bounds are empty, view reset to default.", "warning");
+                return;
             }
 
+            const center = boundingBox.getCenter(new THREE.Vector3());
+            const size = boundingBox.getSize(new THREE.Vector3());
+            console.log("frameObject: BBox Center:", center.toArray().map(c=>c.toFixed(2)), "Size:", size.toArray().map(c=>c.toFixed(2)));
 
-            // Update controls target and camera
-            controls.target.copy(object.position); // Should be (0,0,0) after centering
+            object.position.sub(center); // Center the object at world origin
+            console.log("frameObject: Object position after centering:", object.position.toArray().map(c=>c.toFixed(2)));
 
-            // Calculate new camera position
-            // A common way is to set camera distance based on object size
+            const maxDim = Math.max(size.x, size.y, size.z);
+            let scaleFactor = 1.0;
+            if (maxDim > 0.00001) { // Increased precision for very small objects
+                scaleFactor = 100 / maxDim; // Target scaled size of 100 units for the largest dimension
+            } else {
+                console.warn("frameObject: maxDim is very small or zero. Using default scaleFactor 1.0.");
+                scaleFactor = 1.0; // Could also be a very large number if we want to see tiny things
+            }
+            
+            // Prevent extreme scaling
+            scaleFactor = Math.max(0.001, Math.min(scaleFactor, 5000)); // Clamp scale factor
+            object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+            console.log("frameObject: maxDim:", maxDim.toFixed(4), "Calculated scaleFactor:", scaleFactor.toFixed(4), "Object final scale:", object.scale.x.toFixed(4));
+
+            controls.target.copy(object.position); // Target is now (0,0,0)
+            console.log("frameObject: Controls target set to:", controls.target.toArray().map(c=>c.toFixed(2)));
+
             const fov = camera.fov * (Math.PI / 180);
-            const objectSize = boundingBox.getSize(new THREE.Vector3()).length();
-            const cameraDistance = objectSize / (2 * Math.tan(fov / 2));
+            const scaledObjectSize = maxDim * scaleFactor; // This is effectively 100 if scaling worked as intended
+            
+            let cameraDistance;
+            if (scaledObjectSize > 0.01) { // Use scaled size
+                cameraDistance = scaledObjectSize / (2 * Math.tan(fov / 2));
+            } else { // Fallback for point-like objects
+                cameraDistance = 100; 
+                console.warn("frameObject: Scaled object size is very small, using fallback camera distance.");
+            }
+            
+            cameraDistance *= 1.7; // Zoom out a bit more for padding around the object
+            cameraDistance = Math.max(controls.minDistance + 1, Math.min(cameraDistance, controls.maxDistance * 0.8)); // Clamp within reasonable bounds related to controls
+            console.log("frameObject: ScaledObjectSize:", scaledObjectSize.toFixed(2), "Calculated cameraDistance:", cameraDistance.toFixed(2));
 
-            const direction = new THREE.Vector3(1, 0.75, 1).normalize(); // Angled view
-            camera.position.copy(direction).multiplyScalar(Math.max(cameraDistance * 1.5, 50)); // Ensure min distance
-            camera.position.add(object.position);
+            const direction = new THREE.Vector3(0.6, 0.5, 1).normalize(); // Slightly different view angle
+            camera.position.copy(direction).multiplyScalar(cameraDistance);
+            // camera.position.add(object.position); // Not needed as object.position is (0,0,0) and controls.target is (0,0,0)
 
-            camera.lookAt(object.position);
+            console.log("frameObject: New camera position:", camera.position.toArray().map(c=>c.toFixed(2)));
+            camera.lookAt(controls.target); // Look at (0,0,0)
             controls.update();
+            console.log("frameObject: Completed.");
         }
 
 
         function loadSTL(file) {
+            console.log("loadSTL: Initiated with file:", file ? file.name : "No file");
             if (!file) {
                 displayStatus('No file provided.', 'warning');
                 return;
             }
             if (!file.name.toLowerCase().endsWith('.stl')) {
                 displayStatus('Invalid file type. Please upload an .STL file.', 'error');
-                fileInput.value = ''; // Reset file input
+                fileInput.value = '';
                 return;
             }
 
             fileNameDisplay.textContent = `Loading: ${file.name}`;
             loaderElement.style.display = 'block';
             placeholder.style.display = 'none';
-            statusMessageElement.style.display = 'none'; // Hide previous status
+            statusMessageElement.style.display = 'none';
 
             const reader = new FileReader();
             reader.onload = function (event) {
+                console.log("FileReader onload triggered for", file.name);
                 try {
                     const contents = event.target.result;
+                    console.log("File contents loaded, length (bytes):", contents.byteLength);
                     const stlLoader = new THREE.STLLoader();
                     const geometry = stlLoader.parse(contents);
+                    console.log("STL parsed. Geometry attributes:", Object.keys(geometry.attributes));
 
                     if (!geometry.hasAttribute('position') || geometry.getAttribute('position').count === 0) {
+                        console.error("Geometry has no position attribute or count is zero.");
                         throw new Error("STL file seems empty or corrupted.");
                     }
                     if (!geometry.hasAttribute('normal')) {
+                        console.log("Geometry has no normals, computing them.");
                         geometry.computeVertexNormals();
                     }
 
-                    clearCurrentModel(); // Clear previous model data
+                    clearCurrentModel(false); // Clear previous model data, don't show placeholder yet
 
                     originalMaterial = new THREE.MeshStandardMaterial({
                         color: parseInt(modelColorPicker.value.replace('#', '0x')),
-                        metalness: 0.2,
-                        roughness: 0.7,
+                        metalness: 0.3, // Slightly more metallic
+                        roughness: 0.6,
                         flatShading: false,
                         wireframe: toggleWireframeCb.checked
                     });
+                    console.log("New material created with color:", modelColorPicker.value, "Wireframe:", toggleWireframeCb.checked);
 
                     mesh = new THREE.Mesh(geometry, originalMaterial);
+                    mesh.name = file.name; // For easier identification in scene graph if needed
+                    console.log("New mesh created:", mesh.name);
                     scene.add(mesh);
+                    console.log("Mesh added to scene. Scene children count:", scene.children.length);
 
-                    frameObject(mesh);
+                    frameObject(mesh); // This is the critical part for visibility
 
-                    // Update model info
                     const vertices = geometry.attributes.position.count;
-                    // For non-indexed STL, each triangle has 3 vertices.
-                    // For indexed, geometry.index.count / 3
                     const triangles = geometry.index ? geometry.index.count / 3 : vertices / 3;
                     modelInfoDisplay.innerHTML = `<p>Vertices: ${vertices.toLocaleString()}</p><p>Triangles: ${triangles.toLocaleString()}</p>`;
+                    console.log("Model info updated. Vertices:", vertices, "Triangles:", triangles);
 
                     displayStatus(`Successfully loaded ${file.name}`, 'success');
                     resetViewBtn.disabled = false;
                     clearModelBtn.disabled = false;
                     toggleWireframeCb.disabled = false;
                     modelColorPicker.disabled = false;
+                    if (interactionInstructions) interactionInstructions.style.display = 'block';
+
 
                 } catch (error) {
-                    console.error("Error parsing STL:", error);
+                    console.error("Error parsing or processing STL:", error.message, error.stack);
                     displayStatus(`Error loading STL: ${error.message}`, 'error');
-                    clearCurrentModel(true); // Clear and show placeholder
+                    clearCurrentModel(true); // Clear and show placeholder on error
                 } finally {
                     loaderElement.style.display = 'none';
-                    fileInput.value = ''; // Reset file input to allow re-upload of same file
+                    fileInput.value = ''; // Reset file input
+                    console.log("loadSTL: Processing finished for", file.name);
                 }
             };
 
@@ -577,13 +660,20 @@
             };
 
             reader.readAsArrayBuffer(file);
+            console.log("FileReader: readAsArrayBuffer called for", file.name);
         }
 
         function clearCurrentModel(showPlaceholder = true) {
+            console.log("clearCurrentModel called. showPlaceholder:", showPlaceholder);
             if (mesh) {
+                console.log("Removing existing mesh:", mesh.name || mesh.uuid);
                 scene.remove(mesh);
-                if(mesh.geometry) mesh.geometry.dispose();
-                if(mesh.material) {
+                if (mesh.geometry) {
+                    console.log("Disposing mesh geometry");
+                    mesh.geometry.dispose();
+                }
+                if (mesh.material) {
+                    console.log("Disposing mesh material(s)");
                     if (Array.isArray(mesh.material)) {
                         mesh.material.forEach(m => m.dispose());
                     } else {
@@ -592,6 +682,7 @@
                 }
                 mesh = null;
                 originalMaterial = null;
+                console.log("Mesh and material set to null");
             }
             if (showPlaceholder) {
                 placeholder.style.display = 'flex';
@@ -603,26 +694,32 @@
             toggleWireframeCb.checked = false;
             toggleWireframeCb.disabled = true;
             modelColorPicker.disabled = true;
+            if (interactionInstructions) interactionInstructions.style.display = 'none';
+            console.log("clearCurrentModel: UI and controls reset.");
         }
 
         // Event Listeners
         fileInput.addEventListener('change', (event) => {
-            if (event.target.files.length > 0) {
+            console.log("File input change event triggered.");
+            if (event.target.files && event.target.files.length > 0) {
                 loadSTL(event.target.files[0]);
+            } else {
+                console.log("File input: No file selected.");
             }
         });
 
         clearModelBtn.addEventListener('click', () => {
+            console.log("Clear Model button clicked.");
             clearCurrentModel();
             displayStatus('Model cleared.', 'info');
         });
 
         resetViewBtn.addEventListener('click', () => {
+            console.log("Reset View button clicked.");
             if (mesh) {
                 frameObject(mesh);
-                displayStatus('View reset.', 'info');
+                displayStatus('View reset to model.', 'info');
             } else {
-                // Reset to default view if no model
                 camera.position.set(50, 50, 50);
                 controls.target.set(0,0,0);
                 camera.lookAt(0,0,0);
@@ -632,66 +729,75 @@
         });
 
         toggleWireframeCb.addEventListener('change', (event) => {
+            console.log("Toggle Wireframe checkbox changed to:", event.target.checked);
             if (mesh && mesh.material) {
                 mesh.material.wireframe = event.target.checked;
             }
         });
 
         toggleGridCb.addEventListener('change', (event) => {
+            console.log("Toggle Grid checkbox changed to:", event.target.checked);
             if (gridHelper) gridHelper.visible = event.target.checked;
         });
 
         toggleAxesCb.addEventListener('change', (event) => {
+            console.log("Toggle Axes checkbox changed to:", event.target.checked);
             if (axesHelper) axesHelper.visible = event.target.checked;
         });
 
         modelColorPicker.addEventListener('input', (event) => {
+            // console.log("Model color picker input:", event.target.value); // Can be spammy
             if (mesh && mesh.material) {
                 mesh.material.color.set(event.target.value);
             }
         });
-        // Set initial color picker value from default constant
+        modelColorPicker.addEventListener('change', (event) => { // Log final change
+             console.log("Model color picker changed to:", event.target.value);
+        });
         modelColorPicker.value = '#' + DEFAULT_MODEL_COLOR.toString(16).padStart(6, '0');
 
 
         bgColorPicker.addEventListener('input', (event) => {
+            // console.log("Background color picker input:", event.target.value); // Spammy
             if (scene) scene.background.set(event.target.value);
         });
-        // Set initial color picker value from default constant
+         bgColorPicker.addEventListener('change', (event) => {
+             console.log("Background color picker changed to:", event.target.value);
+        });
         bgColorPicker.value = '#' + DEFAULT_BG_COLOR.toString(16).padStart(6, '0');
 
 
         screenshotBtn.addEventListener('click', () => {
+            console.log("Screenshot button clicked.");
+            if (!renderer) {
+                displayStatus('Renderer not available for screenshot.', 'error');
+                return;
+            }
             try {
-                renderer.render(scene, camera); // Ensure a fresh render
+                renderer.render(scene, camera); 
                 const dataURL = renderer.domElement.toDataURL('image/png');
                 const link = document.createElement('a');
-                link.download = 'stl_model_screenshot.png';
+                const timestamp = new Date().toISOString().replace(/[:.-]/g, '').slice(0, -4); //YYYYMMDDTHHmmss
+                link.download = `stl_screenshot_${timestamp}.png`;
                 link.href = dataURL;
+                document.body.appendChild(link); // Required for Firefox
                 link.click();
+                document.body.removeChild(link);
                 displayStatus('Screenshot captured!', 'success');
             } catch (e) {
                 console.error("Screenshot failed:", e);
-                displayStatus('Screenshot failed. Your browser might not support this feature or an error occurred.', 'error');
+                displayStatus('Screenshot failed. This might not be supported on your browser or an error occurred.', 'error');
             }
         });
 
-        // Drag and Drop
-        viewerContainer.addEventListener('dragover', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            viewerContainer.classList.add('drag-over');
+        // Drag and Drop (less critical for primary mobile use but good to keep)
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            viewerContainer.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
         });
-
-        viewerContainer.addEventListener('dragleave', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            viewerContainer.classList.remove('drag-over');
-        });
-
+        viewerContainer.addEventListener('dragenter', () => viewerContainer.classList.add('drag-over'));
+        viewerContainer.addEventListener('dragleave', () => viewerContainer.classList.remove('drag-over'));
         viewerContainer.addEventListener('drop', (event) => {
-            event.preventDefault();
-            event.stopPropagation();
+            console.log("File dropped.");
             viewerContainer.classList.remove('drag-over');
             if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
                 loadSTL(event.dataTransfer.files[0]);
@@ -699,38 +805,50 @@
             }
         });
 
-        // Initial state for buttons
         function setInitialControlsState() {
+            console.log("setInitialControlsState: Setting initial state of controls.");
             resetViewBtn.disabled = true;
             clearModelBtn.disabled = true;
             toggleWireframeCb.disabled = true;
             modelColorPicker.disabled = true;
-            // Checkbox initial states (can be set in HTML too)
             toggleWireframeCb.checked = false;
             toggleGridCb.checked = false;
             toggleAxesCb.checked = false;
+            if (interactionInstructions) interactionInstructions.style.display = 'none';
         }
 
-        // Check for WebGL support
         function detectWebGL() {
+            console.log("detectWebGL: Checking for WebGL support.");
             try {
                 const canvas = document.createElement( 'canvas' );
-                return !! ( window.WebGLRenderingContext && ( canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' ) ) );
+                const supported = !! ( window.WebGLRenderingContext && ( canvas.getContext( 'webgl' ) || canvas.getContext( 'experimental-webgl' ) ) );
+                console.log("detectWebGL: WebGL supported:", supported);
+                return supported;
             } catch ( e ) {
+                console.error("detectWebGL: Error during detection:", e);
                 return false;
             }
         }
 
         // --- Initialize ---
-        if (detectWebGL()) {
-            initThree();
-            setInitialControlsState();
-        } else {
-            const errorMsg = "WebGL is not supported or disabled in your browser. This viewer cannot operate.";
-            placeholder.innerHTML = `<p style="color: var(--error-color);">${errorMsg}</p>`;
-            document.querySelector('.controls-panel').style.display = 'none'; // Hide controls
-            console.error(errorMsg);
-        }
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log("DOMContentLoaded event fired.");
+            if (detectWebGL()) {
+                if(initThree()) { // if initThree succeeds
+                    setInitialControlsState();
+                     console.log("Viewer initialization successful.");
+                } else {
+                    console.error("initThree failed. Viewer not fully initialized.");
+                     // Error message already displayed by initThree
+                }
+            } else {
+                const errorMsg = "WebGL is not supported or disabled in your browser. This viewer cannot operate.";
+                console.error(errorMsg);
+                if (placeholder) placeholder.innerHTML = `<p style="color: var(--error-color);">${errorMsg}</p>`;
+                const controlsPanel = document.querySelector('.controls-panel');
+                if (controlsPanel) controlsPanel.style.display = 'none';
+            }
+        });
 
     </script>
 </body>
